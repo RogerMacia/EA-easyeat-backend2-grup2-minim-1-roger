@@ -26,7 +26,7 @@ const deleteRestaurant = async (restaurantId: string): Promise<IRestaurant | nul
     return await RestaurantModel.findByIdAndDelete(restaurantId);
 };
 
-const getRestaurantWithCustumers = async (restaurantId: string): Promise<IRestaurant | null> => {
+const getRestaurantWithCustomers = async (restaurantId: string): Promise<IRestaurant | null> => {
     return await RestaurantModel.findById(restaurantId).populate('customers', '-restaurant').lean();
 };
 
@@ -70,7 +70,7 @@ export default {
     getAllRestaurants,
     updateRestaurant,
     deleteRestaurant,
-    getRestaurantWithCustumers,
+    getRestaurantWithCustomers: getRestaurantWithCustomers,
     getRestaurantFull,
     getNearby,
     getBadges,

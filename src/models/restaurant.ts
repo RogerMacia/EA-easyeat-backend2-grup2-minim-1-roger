@@ -44,10 +44,11 @@ const restaurantSchema = new Schema<IRestaurant>(
     {
         profile: {
             name: { type: String, required: true },
-            description: { type: String },
+            description: { type: String, required: true },
             rating: { type: Number, default: 0 }, // inicialment 0
             category: [{
                 type: String,
+                required: true,
                 enum: [
                     'Italià', 'Japonès', 'Sushi', 'Mexicà', 'Xinès', 'Indi', 'Tailandès', 'Francès',
                     'Espanyol', 'Grec', 'Turc', 'Coreà', 'Vietnamita','Alemany', 'Brasileny', 'Peruà', 'Vegà', 'Vegetarià', 'Marisc', 'Carn',
@@ -71,11 +72,10 @@ const restaurantSchema = new Schema<IRestaurant>(
             },
             location: {
                 city: { type: String, required: true },
-                address: { type: String, required: true },
-                googlePlaceId: { type: String },
+                address: { type: String, default: '' },
                 coordinates: {
-                    type: { type: String, enum: ['Point'], default: 'Point', required: true },
-                    coordinates: { type: [Number], required: true }
+                    type: { type: String, enum: ['Point']},
+                    coordinates: { type: [Number], required: false }
                 }
             },
         },
@@ -89,7 +89,7 @@ const restaurantSchema = new Schema<IRestaurant>(
 );
 
 // Index geoespacial
-restaurantSchema.index({ "profile.location.coordinates": "2dsphere" });
+restaurantSchema.index({ "profile.location.coordinates": "2dsphere" }, { sparse: true });
 
 // 3️⃣ Model
 export const RestaurantModel = model<IRestaurant>("Restaurant", restaurantSchema);

@@ -6,157 +6,6 @@ const router = express.Router();
 
 /**
  * @openapi
- * tags:
- *   - name: Restaurants
- *     description: CRUD endpoints for restaurants
- *
- * components:
- *   schemas:
- *     Restaurant:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *           description: MongoDB ObjectId
- *           example: "65f1c2a1b2c3d4e5f6789013"
- *         profile:
- *           type: object
- *           properties:
- *             name:
- *               type: string
- *               example: "La Pepita"
- *             description:
- *               type: string
- *               example: "Restaurant de cuina mediterrània"
- *             rating:
- *               type: number
- *               example: 4.5
- *             category:
- *               type: array
- *               items:
- *                 type: string
- *               example: ["Espanyol", "Taperia"]
- *             timetable:
- *               type: object
- *               description: Weekly timetable with open/close times
- *             image:
- *               type: array
- *               items:
- *                 type: string
- *               example: ["https://example.com/image.jpg"]
- *             contact:
- *               type: object
- *               properties:
- *                 phone:
- *                   type: string
- *                   example: "+34 931 234 567"
- *                 email:
- *                   type: string
- *                   example: "info@lapepita.com"
- *             location:
- *               type: object
- *               required:
- *                 - city
- *                 - address
- *                 - coordinates
- *               properties:
- *                 city:
- *                   type: string
- *                   example: "Barcelona"
- *                 address:
- *                   type: string
- *                   example: "Carrer de Provença, 123"
- *                 googlePlaceId:
- *                   type: string
- *                   example: "ChIJN1t_tDeuEmsRUsoyG83frY4"
- *                 coordinates:
- *                   type: object
- *                   properties:
- *                     type:
- *                       type: string
- *                       example: "Point"
- *                     coordinates:
- *                       type: array
- *                       items:
- *                         type: number
- *                       example: [2.1734, 41.3851]
- *         employees:
- *           type: array
- *           items:
- *             type: string
- *           example: ["65f1c2a1b2c3d4e5f6789012"]
- *         rewards:
- *           type: array
- *           items:
- *             type: string
- *           example: ["65f1c2a1b2c3d4e5f6789014"]
- *         statistics:
- *           type: string
- *           example: "65f1c2a1b2c3d4e5f6789015"
- *         badges:
- *           type: array
- *           items:
- *             type: string
- *           example: ["65f1c2a1b2c3d4e5f6789016"]
- *     RestaurantCreateUpdate:
- *       type: object
- *       required:
- *         - profile
- *       properties:
- *         profile:
- *           type: object
- *           required:
- *             - name
- *             - location
- *           properties:
- *             name:
- *               type: string
- *               example: "La Pepita"
- *             description:
- *               type: string
- *             category:
- *               type: array
- *               items:
- *                 type: string
- *             timetable:
- *               type: object
- *             image:
- *               type: array
- *               items:
- *                 type: string
- *             contact:
- *               type: object
- *               properties:
- *                 phone:
- *                   type: string
- *                 email:
- *                   type: string
- *             location:
- *               type: object
- *               required:
- *                 - city
- *                 - address
- *                 - coordinates
- *               properties:
- *                 city:
- *                   type: string
- *                 address:
- *                   type: string
- *                 googlePlaceId:
- *                   type: string
- *                 coordinates:
- *                   type: object
- *                   properties:
- *                     type:
- *                       type: string
- *                     coordinates:
- *                       type: array
- *                       items:
- *                         type: number
- */
-
-/**
- * @openapi
  * /restaurants:
  *   post:
  *     summary: Creates a restaurant
@@ -166,16 +15,44 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/RestaurantCreateUpdate'
+ *             type: object
+ *             required:
+ *               - profile
+ *             properties:
+ *               profile:
+ *                 type: object
+ *                 required:
+ *                   - name
+ *                   - description
+ *                   - category
+ *                   - location
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: "La Pepita"
+ *                   description:
+ *                     type: string
+ *                     example: "Cuina Catalana"
+ *                   category:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["Espanyol"]
+ *                   location:
+ *                     type: object
+ *                     required:
+ *                       - city
+ *                     properties:
+ *                       city:
+ *                         type: string
+ *                         example: "Barcelona"
  *     responses:
  *       201:
- *         description: Created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Restaurant'
+ *         description: Restaurant created
  *       422:
- *         description: Validation failed (Joi)
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
  */
 router.post('/', ValidateJoi(Schemas.restaurant.create), controller.createRestaurant);
 
@@ -306,7 +183,195 @@ router.get('/:restaurantId/full', controller.getRestaurantFull);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/RestaurantCreateUpdate'
+ *             type: object
+ *             properties:
+ *               profile:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   rating:
+ *                     type: number
+ *                     minimum: 0
+ *                     maximum: 10
+ *                   category:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   timetable:
+ *                     type: object
+ *                     properties:
+ *                       monday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       tuesday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       wednesday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       thursday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       friday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       saturday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                       sunday:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             open:
+ *                               type: string
+ *                             close:
+ *                               type: string
+ *                   image:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       format: uri
+ *                   contact:
+ *                     type: object
+ *                     properties:
+ *                       phone:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                   location:
+ *                     type: object
+ *                     properties:
+ *                       city:
+ *                         type: string
+ *                       address:
+ *                         type: string
+ *                       googlePlaceId:
+ *                         type: string
+ *                       coordinates:
+ *                         type: object
+ *                         properties:
+ *                           type:
+ *                             type: string
+ *                             enum: [Point]
+ *                           coordinates:
+ *                             type: array
+ *                             items:
+ *                               type: number
+ *                             minItems: 2
+ *                             maxItems: 2
+ *               employees:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               dishes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               rewards:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               statistics:
+ *                 type: string
+ *               badges:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *           example:
+ *             profile:
+ *               name: "La Pepita"
+ *               description: "Cuina catalana de mercat amb productes locals"
+ *               rating: 4.5
+ *               category: ["Espanyol", "Taperia", "Wine Bar"]
+ *               timetable:
+ *                 monday: []
+ *                 tuesday:
+ *                   - open: "13:00"
+ *                     close: "16:00"
+ *                   - open: "20:00"
+ *                     close: "23:00"
+ *                 wednesday:
+ *                   - open: "13:00"
+ *                     close: "16:00"
+ *                   - open: "20:00"
+ *                     close: "23:00"
+ *                 thursday:
+ *                   - open: "13:00"
+ *                     close: "16:00"
+ *                   - open: "20:00"
+ *                     close: "23:00"
+ *                 friday:
+ *                   - open: "13:00"
+ *                     close: "16:00"
+ *                   - open: "20:00"
+ *                     close: "23:30"
+ *                 saturday:
+ *                   - open: "13:00"
+ *                     close: "23:30"
+ *                 sunday: []
+ *               image:
+ *                 - "https://example.com/images/lapepita1.jpg"
+ *                 - "https://example.com/images/lapepita2.jpg"
+ *               contact:
+ *                 phone: "+34 931 234 567"
+ *                 email: "info@lapepita.cat"
+ *               location:
+ *                 city: "Barcelona"
+ *                 address: "Carrer de Provença, 123"
+ *                 googlePlaceId: "ChIJd8BlQ2BZwokRAFUEcm_qrcA"
+ *                 coordinates:
+ *                   type: "Point"
+ *                   coordinates: [2.1734, 41.3851]
+ *             employees:
+ *               - "64a1f2b3c4d5e6f7a8b9c0d1"
+ *             dishes:
+ *               - "64a1f2b3c4d5e6f7a8b9c0d2"
+ *             rewards:
+ *               - "64a1f2b3c4d5e6f7a8b9c0d3"
+ *             statistics: "64a1f2b3c4d5e6f7a8b9c0d4"
+ *             badges:
+ *               - "64a1f2b3c4d5e6f7a8b9c0d5"
  *     responses:
  *       200:
  *         description: Updated successfully

@@ -48,9 +48,9 @@ const deleteRestaurant = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
-const getRestaurantWithCustumers = async (req: Request, res: Response, next: NextFunction) => {
+const getRestaurantWithCustomers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const restaurant = await RestaurantService.getRestaurantWithCustumers(req.params.restaurantId);
+        const restaurant = await RestaurantService.getRestaurantWithCustomers(req.params.restaurantId);
         if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
         return res.status(200).json(restaurant);
     } catch (error) {
@@ -109,7 +109,7 @@ export default {
     readAll,
     updateRestaurant,
     deleteRestaurant,
-    getRestaurantWithCustumers,
+    getRestaurantWithCustomers: getRestaurantWithCustomers,
     getRestaurantFull,
     getNearby,
     getBadges,

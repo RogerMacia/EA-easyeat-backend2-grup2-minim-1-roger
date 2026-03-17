@@ -240,29 +240,17 @@ export const Schemas = {
         create: Joi.object<IRestaurant>({
             profile: Joi.object({
                 name: Joi.string().required(),
-                description: Joi.string(),
-                rating: Joi.number().min(0).max(10),
-                category: Joi.array().items(Joi.string().valid(...categoryEnum)),
-                timetable: timetableSchema,
-                image: Joi.array().items(Joi.string().uri()),
-
-                contact: Joi.object({
-                    phone: Joi.string(),
-                    email: Joi.string().email()
-                }),
-
+                description: Joi.string().required(),
+                category: Joi.array().items(Joi.string().valid(...categoryEnum)).min(1).required(),
                 location: Joi.object({
                     city: Joi.string().required(),
-                    address: Joi.string(),
-                    googlePlaceId: Joi.string(),
+                    // Remove .required() from address and coordinates
+                    address: Joi.string().allow(''),
                     coordinates: Joi.object({
                         type: Joi.string().valid('Point').default('Point'),
-                        coordinates: Joi.array()
-                            .items(Joi.number())
-                            .length(2)
-                            .required()
-                    })
-                })
+                        coordinates: Joi.array().items(Joi.number()).length(2)
+                    }).optional()
+                }).required()
             }).required(),
 
             employees: Joi.array().items(objectId),
