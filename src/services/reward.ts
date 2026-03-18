@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { RewardModel, IReward } from '../models/reward';
+import { RestaurantModel } from '../models/restaurant';
 
 const createReward = async (data: Partial<IReward>) => {
     const reward = new RewardModel({
@@ -7,7 +8,16 @@ const createReward = async (data: Partial<IReward>) => {
         ...data
     });
 
-    return await reward.save();
+    const savedReward = await reward.save();
+
+    // Automatically add the new reward ID to the restaurant's rewards array
+    if (data.restaurant_id) {
+        await RestaurantModel.findByIdAndUpdate(data.restaurant_id, {
+            $push: { rewards: savedReward._id }
+        });
+    }
+
+    return savedReward;
 };
 
 const getReward = async (rewardId: string) => {
@@ -30,7 +40,16 @@ const updateReward = async (rewardId: string, data: Partial<IReward>) => {
 };
 
 const deleteReward = async (rewardId: string) => {
-    return await RewardModel.findByIdAndDelete(rewardId);
+    const deletedReward = await RewardModel.findByIdAndDelete(rewardId);
+    
+    // Automatically remove the reward ID from the restaurant's rewards array
+    if (deletedReward && deletedReward.restaurant_id) {
+        await RestaurantModel.findByIdAndUpdate(deletedReward.restaurant_id, {
+            $pull: { rewards: deletedReward._id }
+        });
+    }
+
+    return deletedReward;
 };
 
 export default {

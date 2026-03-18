@@ -7,11 +7,11 @@ const createRestaurant = async (data: Partial<IRestaurant>): Promise<IRestaurant
 };
 
 const getRestaurant = async (restaurantId: string): Promise<IRestaurant | null> => {
-    return await RestaurantModel.findById(restaurantId);
+    return await RestaurantModel.findById(restaurantId).populate('rewards');
 };
 
 const getAllRestaurants = async (): Promise<IRestaurant[]> => {
-    return await RestaurantModel.find();
+    return await RestaurantModel.find().populate('rewards');
 };
 
 const updateRestaurant = async (restaurantId: string, data: Partial<IRestaurant>): Promise<IRestaurant | null> => {
