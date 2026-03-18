@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcrypt';
 import Logging from '../library/logging';
 
 // Import all models
@@ -16,6 +17,8 @@ import { PointsWalletModel } from '../models/pointsWallet';
 import { RewardRedemptionModel } from '../models/rewardRedemption';
 import { DishModel } from '../models/dish';
 
+const SALT_ROUNDS = 10;
+
 const modelMap: { [key: string]: mongoose.Model<any> } = {
     'restaurants.json': RestaurantModel,
     'reviews.json': ReviewModel,
@@ -28,6 +31,21 @@ const modelMap: { [key: string]: mongoose.Model<any> } = {
     'pointsWallets.json': PointsWalletModel,
     'rewardRedemptions.json': RewardRedemptionModel,
     'dishes.json': DishModel
+};
+
+/**
+ * Hashes the password field of every customer record that has one.
+ * Returns a new array — the original seed data is not mutated.
+ */
+const hashCustomerPasswords = async (customers: any[]): Promise<any[]> => {
+    return Promise.all(
+        customers.map(async (customer) => {
+            if (!customer.password) return customer;
+            const salt = await bcrypt.genSalt(SALT_ROUNDS);
+            const hashedPassword = await bcrypt.hash(customer.password, salt);
+            return { ...customer, password: hashedPassword };
+        })
+    );
 };
 
 export const insertData = async () => {
@@ -63,7 +81,25 @@ export const insertData = async () => {
                     if (count === 0) {
                         const filePath = path.join(dataDir, file);
                         const fileContent = fs.readFileSync(filePath, 'utf-8');
-                        const data = JSON.parse(fileContent);
+                        let data = JSON.parse(fileContent);
+
+                        // Hash passwords before seeding customer records
+                        if (file === 'customers.json') {
+                            Logging.info('Hashing customer passwords...');
+                            data = await hashCustomerPasswords(data);
+                        }
+
+                        if (file === 'employees.json') {
+                            Logging.info('Hashing employee passwords...');
+                            data = await Promise.all(
+                                data.map(async (emp: any) => {
+                                    if (!emp.profile?.password) return emp;
+                                    const salt = await bcrypt.genSalt(SALT_ROUNDS);
+                                    return { ...emp, profile: { ...emp.profile, password: await bcrypt.hash(emp.profile.password, salt) } };
+                                })
+                            );
+                        }
+
                         Logging.info(`Inserting data into ${model.collection.name} collection...`);
                         await model.insertMany(data);
                         Logging.info(`Data inserted into ${model.collection.name} collection.`);

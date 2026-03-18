@@ -95,23 +95,61 @@ REST API built with **Node.js**, **Express**, **TypeScript**, and **Mongoose** t
 
 ```
 src/
-├── server.ts              # Entry point: Mongo connection and server start
-├── swagger.ts             # Swagger configuration
 ├── config/
-│   └── config.ts          # Environment variable configuration (Mongo + port)
-├── library/
-│   └── logging.ts         # Logging utility with colors (INFO / WARN / ERROR)
-├── middleware/
-│   └── joi.ts             # Payload validation with Joi + schemas for each entity
-├── models/
-│   ├── restaurant.ts    # Mongoose Schema/Model for Organization
-│   └── user.ts            # Mongoose Schema/Model for User
+│   └── config.ts           # Environment variable configuration (Mongo + port)
 ├── controllers/
-│   ├── restaurant.ts    # CRUD logic for Organization
-│   └── user.ts            # CRUD logic for User
-└── routes/
-    ├── restaurant.ts    # Route definitions for Organization
-    └── user.ts            # Route definitions for User
+│   └── restaurant.ts
+│   └── customer.ts
+│   └── review.ts
+│   └── reward.ts
+│   └── visit.ts
+├── data/
+│   └── badges.json
+│   └── customers.json
+│   └── dishes.json
+│   └── employees.json
+│   └── pointsWallets.json
+│   └── restaurants.json
+│   └── reviews.json
+│   └── rewardRedemptions.json
+│   └── rewards.json
+│   └── statistics.json
+│   └── visits.json
+├── middleware/
+│   └── joi.ts                  # Payload validation with Joi + schemas for each entity
+├── models/
+│   └── badges.ts               # Mongoose Schema/Model for Badge
+│   └── customers.ts            # Mongoose Schema/Model for Customer
+│   └── dishes.ts               # Mongoose Schema/Model for Dish
+│   └── employees.ts            # Mongoose Schema/Model for Employee
+│   └── pointsWallets.ts        # Mongoose Schema/Model for PointsWallet
+│   └── restaurants.ts          # Mongoose Schema/Model for Restaurant
+│   └── reviews.ts              # Mongoose Schema/Model for Review
+│   └── rewardRedemptions.ts    # Mongoose Schema/Model for RewardRedemption
+│   └── rewards.ts              # Mongoose Schema/Model for Reward
+│   └── statistics.ts           # Mongoose Schema/Model for Statistic
+│   └── visits.ts               # Mongoose Schema/Model for Visit
+├── server.ts                   # Entry point: Mongo connection and server start
+├── swagger.ts                  # Swagger configuration
+├── library/
+│   └── logging.ts              # Logging utility with colors (INFO / WARN / ERROR)
+├── routes/
+│   └── restaurant.ts            # Express routes for Restaurant
+│   └── customer.ts              # Express routes for Customer
+│   └── review.ts                # Express routes for Review
+│   └── reward.ts                # Express routes for Reward
+│   └── visit.ts                 # Express routes for Visit
+├── services/
+│   └── restaurant.ts            # Business logic for Restaurant (DB calls)
+│   └── customer.ts              # Business logic for Customer (DB calls)
+│   └── review.ts                # Business logic for Review (DB calls)
+│   └── reward.ts                # Business logic for Reward (DB calls)
+│   └── visit.ts                 # Business logic for Visit (DB calls)
+├── utils/
+│   └── dataSeeder.ts            # Utility to load JSON data into MongoDB
+│   └── recomendation.ts         # Utility to generate restaurant recommendations based on user visits and reviews
+│   └── servicePeriod.ts         #             
+
 ```
 
 ---

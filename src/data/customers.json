@@ -2,7 +2,7 @@
   {
     "name": "Maria García",
     "email": "maria.garcia@gmail.com",
-    "password": "$2b$10$hashedpassword123",
+    "password": "password123",
     "profilePictures": [
       "https://cdn.example.com/users/maria_avatar.jpg"
     ],
@@ -31,7 +31,7 @@
   {
     "name": "Jordi Puig",
     "email": "jordi.puig@outlook.com",
-    "password": "$2b$10$anotherhash456",
+    "password": "password123",
     "profilePictures": [],
     "pointsWallet": ["66c3d4e5f6a7b8c9d0e1f2a5"],
     "visitHistory": ["65f1c2a1b2c3d4e5f6789064"],
