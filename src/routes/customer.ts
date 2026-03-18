@@ -1,6 +1,7 @@
 import express from 'express';
 import controller from '../controllers/customer';
 import { Schemas, ValidateJoi } from '../middleware/joi';
+// import { requireAdmin } from '../middleware/auth'; // ← uncomment once you have auth middleware
 
 const router = express.Router();
 
@@ -8,30 +9,15 @@ const router = express.Router();
  * @openapi
  * tags:
  *   - name: Customer
- *     description: CRUD endpoints for customer.
+ *     description: CRUD endpoints for customers.
  *
  * components:
  *   schemas:
- *     PointsWallet:
- *       type: object
- *       required:
- *         - restaurant_id
- *         - points
- *       properties:
- *         restaurant_id:
- *           type: string
- *           description: Restaurant ObjectId
- *           example: "65f1c2a1b2c3d4e5f6789013"
- *         points:
- *           type: number
- *           example: 120
- * 
  *     Customer:
  *       type: object
  *       properties:
  *         _id:
  *           type: string
- *           description: MongoDB ObjectId
  *           example: "65f1c2a1b2c3d4e5f6789012"
  *         name:
  *           type: string
@@ -39,51 +25,39 @@ const router = express.Router();
  *         email:
  *           type: string
  *           example: "nizar@gmail.com"
- *         password:
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *         deletedAt:
  *           type: string
- *           example: "password123"
+ *           format: date-time
+ *           nullable: true
+ *           example: null
  *         profilePictures:
  *           type: array
  *           items:
  *             type: string
- *           example:
- *             - "https://example.com/profile1.jpg"
- *             - "https://example.com/profile2.jpg"
  *         pointsWallet:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/PointsWallet'
+ *             type: string
  *         visitHistory:
  *           type: array
  *           items:
  *             type: string
- *           description: Array of Visit ObjectIds
- *           example:
- *             - "65f1c2a1b2c3d4e5f6789014"
- *             - "65f1c2a1b2c3d4e5f6789015"
  *         favoriteRestaurants:
  *           type: array
  *           items:
  *             type: string
- *           description: Array of Restaurant ObjectIds
- *           example:
- *             - "65f1c2a1b2c3d4e5f6789016"
- *             - "65f1c2a1b2c3d4e5f6789017"
  *         badges:
  *           type: array
  *           items:
  *             type: string
- *           description: Array of BadgeCustomer ObjectIds
- *           example:
- *             - "65f1c2a1b2c3d4e5f6789018"
  *         reviews:
  *           type: array
  *           items:
  *             type: string
- *           description: Array of Review ObjectIds
- *           example:
- *             - "65f1c2a1b2c3d4e5f6789019"
- * 
+ *
  *     CreateCustomer:
  *       type: object
  *       required:
@@ -99,11 +73,29 @@ const router = express.Router();
  *         password:
  *           type: string
  *           example: "password123"
+ *
+ *     PaginatedCustomers:
+ *       type: object
+ *       properties:
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Customer'
+ *         total:
+ *           type: number
+ *           example: 42
+ *         page:
+ *           type: number
+ *           example: 1
+ *         totalPages:
+ *           type: number
+ *           example: 3
  */
 
+// ─── POST /customers ──────────────────────────────────────────────────────────
 /**
  * @openapi
- * /customer:
+ * /customers:
  *   post:
  *     summary: Creates a new customer
  *     tags: [Customer]
@@ -121,11 +113,40 @@ const router = express.Router();
  */
 router.post('/', ValidateJoi(Schemas.customer.create), controller.createCustomer);
 
+// ─── GET /customers ───────────────────────────────────────────────────────────
 /**
  * @openapi
- * /customer/{customerId}:
+ * /customers:
  *   get:
- *     summary: Gets a customer by ID
+ *     summary: Lists all active customers (paginated)
+ *     tags: [Customer]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaginatedCustomers'
+ */
+router.get('/', controller.readAll);
+
+// ─── GET /customers/:customerId ───────────────────────────────────────────────
+/**
+ * @openapi
+ * /customers/{customerId}:
+ *   get:
+ *     summary: Gets an active customer by ID
  *     tags: [Customer]
  *     parameters:
  *       - in: path
@@ -133,32 +154,20 @@ router.post('/', ValidateJoi(Schemas.customer.create), controller.createCustomer
  *         required: true
  *         schema:
  *           type: string
- *         description: The customer's ObjectId
  *     responses:
  *       200:
  *         description: OK
  *       404:
- *         description: Not found
+ *         description: Not found or soft-deleted
  */
 router.get('/:customerId', controller.readCustomer);
 
+// ─── PUT /customers/:customerId ───────────────────────────────────────────────
 /**
  * @openapi
- * /customer:
- *   get:
- *     summary: Lists all customer
- *     tags: [Customer]
- *     responses:
- *       200:
- *         description: OK
- */
-router.get('/', controller.readAll);
-
-/**
- * @openapi
- * /Customer/{customerId}:
+ * /customers/{customerId}:
  *   put:
- *     summary: Updates a customer by ID
+ *     summary: Updates an active customer by ID
  *     tags: [Customer]
  *     parameters:
  *       - in: path
@@ -166,7 +175,6 @@ router.get('/', controller.readAll);
  *         required: true
  *         schema:
  *           type: string
- *         description: The customer's ObjectId
  *     requestBody:
  *       required: true
  *       content:
@@ -174,20 +182,21 @@ router.get('/', controller.readAll);
  *           schema:
  *             $ref: '#/components/schemas/CreateCustomer'
  *     responses:
- *       201:
+ *       200:
  *         description: Updated
  *       404:
- *         description: Not found
+ *         description: Not found or already deleted
  *       422:
- *         description: Validation failed (Joi)
+ *         description: Validation failed
  */
 router.put('/:customerId', ValidateJoi(Schemas.customer.update), controller.updateCustomer);
 
+// ─── DELETE /customers/:customerId  (soft delete) ─────────────────────────────
 /**
  * @openapi
- * /Customer/{customerId}:
+ * /customers/{customerId}:
  *   delete:
- *     summary: Deletes a customer by ID
+ *     summary: Soft-deletes a customer (sets isActive=false, stamps deletedAt)
  *     tags: [Customer]
  *     parameters:
  *       - in: path
@@ -195,13 +204,54 @@ router.put('/:customerId', ValidateJoi(Schemas.customer.update), controller.upda
  *         required: true
  *         schema:
  *           type: string
- *         description: The customer's ObjectId
  *     responses:
  *       200:
- *         description: OK
+ *         description: Customer deactivated
  *       404:
  *         description: Not found
  */
-router.delete('/:customerId', controller.deleteCustomer);
+router.delete('/:customerId/soft', controller.softDeleteCustomer);
+
+// ─── PATCH /customers/:customerId/restore ─────────────────────────────────────
+/**
+ * @openapi
+ * /customers/{customerId}/restore:
+ *   patch:
+ *     summary: Restores a soft-deleted customer
+ *     tags: [Customer]
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Customer restored
+ *       404:
+ *         description: Not found
+ */
+router.patch('/:customerId/restore', controller.restoreCustomer);
+
+// ─── DELETE /customers/:customerId/hard  (hard delete — admin only) ───────────
+/**
+ * @openapi
+ * /customers/{customerId}/hard:
+ *   delete:
+ *     summary: Permanently deletes a customer (admin only)
+ *     tags: [Customer]
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Customer permanently deleted
+ *       404:
+ *         description: Not found
+ */
+router.delete('/:customerId/hard',controller.hardDeleteCustomer);
 
 export default router;

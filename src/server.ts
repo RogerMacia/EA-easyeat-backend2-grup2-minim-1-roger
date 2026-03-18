@@ -58,7 +58,7 @@ const StartServer = () => {
     /** Routes */
     router.use('/restaurants', restaurantRoutes);
     router.use('/reviews', reviewRoutes);
-    router.use('/customer', customerRoutes);
+    router.use('/customers', customerRoutes);
     router.use('/rewards', rewardRoutes)
     router.use('/visits', visitRoutes)
 

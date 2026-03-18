@@ -1,9 +1,9 @@
-import { Schema, model, Types, Model } from 'mongoose';
+import { Schema, model, Types, Model, QueryWithHelpers, HydratedDocument } from 'mongoose';
 import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 10;
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface ICustomer {
     _id?: Types.ObjectId;
@@ -11,7 +11,8 @@ export interface ICustomer {
     email: string;
     password?: string;
     refreshTokenHash?: string;
-    isActive: boolean;
+    isActive?: boolean;
+    deletedAt?: Date | null;        // null = alive, Date = soft-deleted
     profilePictures?: string[];
     pointsWallet?: Types.ObjectId[];
     visitHistory?: Types.ObjectId[];
@@ -20,27 +21,40 @@ export interface ICustomer {
     reviews?: Types.ObjectId[];
 }
 
-// Instance methods are declared separately so Mongoose can type them correctly
 export interface ICustomerMethods {
-    /**
-     * Compares a plain-text candidate password against the stored bcrypt hash.
-     * Returns true if they match, false otherwise.
-     */
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-type CustomerModel = Model<ICustomer, {}, ICustomerMethods>;
+/**
+ * TResult stays generic so `.active()` works correctly on both
+ * `.find()` (returns array) and `.findOne()` (returns single doc).
+ * Using a fixed array type here was the source of the TS2322 error.
+ */
+export interface ICustomerQueryHelpers {
+    active<TResult>(
+        this: QueryWithHelpers<TResult, HydratedDocument<ICustomer>, ICustomerQueryHelpers>
+    ): QueryWithHelpers<TResult, HydratedDocument<ICustomer>, ICustomerQueryHelpers>;
+}
+
+// Thread query helpers through both Model and Schema generics
+type CustomerModelType = Model<ICustomer, ICustomerQueryHelpers, ICustomerMethods>;
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const customerSchema = new Schema<ICustomer, CustomerModel, ICustomerMethods>(
+const customerSchema = new Schema<
+    ICustomer,
+    CustomerModelType,
+    ICustomerMethods,
+    ICustomerQueryHelpers          // ← 4th generic = query helpers
+>(
     {
         name:               { type: String, required: true },
-        email:              { type: String, required: true, unique: true, match: /.+\@.+\..+/ },
-        // select: false ensures the password hash is never returned in queries by default
+        email:              { type: String, required: true, unique: true, match: /.+@.+\..+/ },
         password:           { type: String, select: false },
         refreshTokenHash:   { type: String },
         isActive:           { type: Boolean, default: true },
+        // Soft-delete marker — indexed for fast filtering in list queries
+        deletedAt:          { type: Date, default: null, index: true },
         profilePictures:    [{ type: String }],
         pointsWallet:       [{ type: Schema.Types.ObjectId, ref: 'PointsWallet' }],
         visitHistory:       [{ type: Schema.Types.ObjectId, ref: 'Visit' }],
@@ -51,12 +65,16 @@ const customerSchema = new Schema<ICustomer, CustomerModel, ICustomerMethods>(
     { timestamps: true }
 );
 
+// ─── Query helper: reusable filter for "alive" documents ──────────────────────
+// Usage: CustomerModel.find().active()  or  CustomerModel.findOne().active()
+customerSchema.query.active = function <TResult>(this: QueryWithHelpers<TResult, HydratedDocument<ICustomer>, ICustomerQueryHelpers>) {
+    return this.where({ deletedAt: null });
+};
+
 // ─── Pre-save hook: hash password ─────────────────────────────────────────────
 
 customerSchema.pre('save', async function () {
-    // Skip hashing if the password field was not modified (e.g. only email changed)
     if (!this.isModified('password') || !this.password) return;
-
     const salt = await bcrypt.genSalt(SALT_ROUNDS);
     this.password = await bcrypt.hash(this.password, salt);
 });
@@ -64,12 +82,10 @@ customerSchema.pre('save', async function () {
 // ─── Instance method: verify password ─────────────────────────────────────────
 
 customerSchema.method('comparePassword', async function (candidatePassword: string): Promise<boolean> {
-    // this.password may be undefined if the field was not selected in the query —
-    // callers should use .select('+password') when fetching a customer for login.
     if (!this.password) return false;
     return bcrypt.compare(candidatePassword, this.password);
 });
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-export const CustomerModel = model<ICustomer, CustomerModel>('Customer', customerSchema);
+export const CustomerModel = model<ICustomer, CustomerModelType>('Customer', customerSchema);

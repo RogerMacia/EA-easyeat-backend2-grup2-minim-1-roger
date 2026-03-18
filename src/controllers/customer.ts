@@ -1,57 +1,120 @@
 import { NextFunction, Request, Response } from 'express';
-import mongoose from 'mongoose';
 import CustomerService from '../services/customer';
 
-const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
-   
+// ─── Create ───────────────────────────────────────────────────────────────────
 
+const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
     try {
-       const savedCustomer = await CustomerService.createCustomer(req.body);
+        const savedCustomer = await CustomerService.createCustomer(req.body);
         return res.status(201).json(savedCustomer);
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
+// ─── Read (single) ────────────────────────────────────────────────────────────
+
 const readCustomer = async (req: Request, res: Response, next: NextFunction) => {
-    const customerId = req.params.customerId;
+    const { customerId } = req.params;
     try {
         const customer = await CustomerService.getCustomer(customerId);
-        return customer ? res.status(200).json(customer) : res.status(404).json({ message: 'not found' });
+        return customer
+            ? res.status(200).json(customer)
+            : res.status(404).json({ message: 'Customer not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
+
+// ─── Read (paginated list) ────────────────────────────────────────────────────
 
 const readAll = async (req: Request, res: Response, next: NextFunction) => {
+    // Accept ?page=1&limit=20 query params
+    const page  = Math.max(1, parseInt(req.query.page  as string, 10) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string, 10) || 20);
+
     try {
-        const customers = await CustomerService.getAllCustomers();
-        return res.status(200).json(customers);
+        const result = await CustomerService.getAllCustomers({ page, limit });
+        return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
+
+// ─── Update ───────────────────────────────────────────────────────────────────
 
 const updateCustomer = async (req: Request, res: Response, next: NextFunction) => {
-    const customerId = req.params.customerId;
+    const { customerId } = req.params;
     try {
         const updatedCustomer = await CustomerService.updateCustomer(customerId, req.body);
-        return updatedCustomer ? res.status(201).json(updatedCustomer) : res.status(404).json({ message: 'not found' });
+        return updatedCustomer
+            ? res.status(200).json(updatedCustomer)
+            : res.status(404).json({ message: 'Customer not found or already deleted' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
+// ─── Soft Delete ──────────────────────────────────────────────────────────────
 
-const deleteCustomer = async (req: Request, res: Response, next: NextFunction) => {
-    const customerId = req.params.customerId;
-
+/**
+ * DELETE /customers/:customerId
+ * Marks the customer as inactive without removing the document.
+ */
+const softDeleteCustomer = async (req: Request, res: Response, next: NextFunction) => {
+    const { customerId } = req.params;
     try {
-        const customer = await CustomerService.deleteCustomer(customerId);
-        return customer ? res.status(201).json(customer) : res.status(404).json({ message: 'not found' });
+        const customer = await CustomerService.softDeleteCustomer(customerId);
+        return customer
+            ? res.status(200).json({ message: 'Customer deactivated', customer })
+            : res.status(404).json({ message: 'Customer not found' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
-export default { createCustomer, readCustomer, readAll, updateCustomer, deleteCustomer };
+// ─── Restore ─────────────────────────────────────────────────────────────────
+
+/**
+ * PATCH /customers/:customerId/restore
+ * Reverses a soft-delete, making the customer active again.
+ */
+const restoreCustomer = async (req: Request, res: Response, next: NextFunction) => {
+    const { customerId } = req.params;
+    try {
+        const customer = await CustomerService.restoreCustomer(customerId);
+        return customer
+            ? res.status(200).json({ message: 'Customer restored', customer })
+            : res.status(404).json({ message: 'Customer not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+// ─── Hard Delete (admin only) ─────────────────────────────────────────────────
+
+/**
+ * DELETE /customers/:customerId/hard
+ * Permanently removes the document. Requires admin privileges.
+ */
+const hardDeleteCustomer = async (req: Request, res: Response, next: NextFunction) => {
+    const { customerId } = req.params;
+    try {
+        const customer = await CustomerService.hardDeleteCustomer(customerId);
+        return customer
+            ? res.status(200).json({ message: 'Customer permanently deleted' })
+            : res.status(404).json({ message: 'Customer not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default {
+    createCustomer,
+    readCustomer,
+    readAll,
+    updateCustomer,
+    softDeleteCustomer,
+    restoreCustomer,
+    hardDeleteCustomer,
+};
