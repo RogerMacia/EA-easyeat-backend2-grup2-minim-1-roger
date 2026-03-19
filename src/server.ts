@@ -22,9 +22,9 @@ const router = express();
 /** Connect to Mongo */
 mongoose
     .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
-    .then(() => {
+    .then(async () => {
         Logging.info('Mongo connected successfully.');
-        insertData();
+        await insertData();
         StartServer();
     })
     .catch((error) => Logging.error(error));

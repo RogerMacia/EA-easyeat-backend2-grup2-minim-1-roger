@@ -95,8 +95,8 @@ export interface RestaurantModelType extends Model<IRestaurant, RestaurantQueryH
 // Regex validators (reused in schema)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** E.164-compatible international phone number */
-const PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
+/** International phone number (allows spaces and hyphens) */
+const PHONE_REGEX = /^\+?[1-9][\d\s\-]{1,18}$/i;
 
 /** Simple RFC-5322-like e-mail check */
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;

@@ -50,6 +50,10 @@ const hashCustomerPasswords = async (customers: any[]): Promise<any[]> => {
 
 export const insertData = async () => {
     try {
+        Logging.info('Dropping existing database...');
+        await mongoose.connection.dropDatabase();
+        Logging.info('Database dropped successfully. Recreating and seeding...');
+
         // Try multiple locations for the data directory
         const possiblePaths = [
             path.join(__dirname, '../data'),           // build/data
@@ -113,5 +117,6 @@ export const insertData = async () => {
     } catch (error) {
         Logging.error('Error inserting data:');
         Logging.error(error);
+        throw error;
     }
 };
