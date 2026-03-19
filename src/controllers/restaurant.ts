@@ -10,7 +10,6 @@ const createRestaurant = async (req: Request, res: Response, next: NextFunction)
         const saved = await RestaurantService.createRestaurant(req.body);
         return res.status(201).json(saved);
     } catch (error: any) {
-        // Surface Mongoose duplicate-key errors as 409 Conflict
         if (error?.code === 11000) {
             return res.status(409).json({
                 message: 'A restaurant with this name already exists in this city.',
@@ -61,27 +60,52 @@ const updateRestaurant = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
-/** Hard-delete – only use in admin/dev contexts. */
-const deleteRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// Delete / restore
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * DELETE /restaurants/:restaurantId/soft
+ * Sets deletedAt = now. The restaurant disappears from all normal queries.
+ * Returns 404 if already soft-deleted or not found.
+ */
+const softDelete = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const restaurant = await RestaurantService.deleteRestaurant(req.params.restaurantId);
+        const restaurant = await RestaurantService.softDeleteRestaurant(req.params.restaurantId);
         return restaurant
-            ? res.status(200).json(restaurant)
-            : res.status(404).json({ message: 'Restaurant not found.' });
+            ? res.status(200).json({ message: 'Restaurant deactivated.', restaurant })
+            : res.status(404).json({ message: 'Restaurant not found or already deactivated.' });
     } catch (error) {
         return res.status(500).json({ error });
     }
 };
 
 /**
- * Soft-delete – marks `deletedAt` and excludes the restaurant from
- * all regular queries.  This is the recommended deletion endpoint.
+ * PATCH /restaurants/:restaurantId/restore
+ * Clears deletedAt, making the restaurant visible again.
+ * Returns 404 if the restaurant is not found or is already active.
  */
-const softDeleteRestaurant = async (req: Request, res: Response, next: NextFunction) => {
+const restore = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const restaurant = await RestaurantService.softDeleteRestaurant(req.params.restaurantId);
+        const restaurant = await RestaurantService.restoreRestaurant(req.params.restaurantId);
         return restaurant
-            ? res.status(200).json({ message: 'Restaurant deactivated.', restaurant })
+            ? res.status(200).json({ message: 'Restaurant restored.', restaurant })
+            : res.status(404).json({ message: 'Restaurant not found or already active.' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+/**
+ * DELETE /restaurants/:restaurantId/hard
+ * Permanently removes the document from the database. Irreversible.
+ * Use only for admin operations or GDPR erasure requests.
+ */
+const hardDelete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const restaurant = await RestaurantService.hardDeleteRestaurant(req.params.restaurantId);
+        return restaurant
+            ? res.status(200).json({ message: 'Restaurant permanently deleted.', restaurant })
             : res.status(404).json({ message: 'Restaurant not found.' });
     } catch (error) {
         return res.status(500).json({ error });
@@ -155,10 +179,6 @@ const getStatistics = async (req: Request, res: Response, next: NextFunction) =>
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Advanced filtering
-// ─────────────────────────────────────────────────────────────────────────────
-
 const getFiltered = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { lng, lat, radiusMeters, categories, minRating, city, openNow, openAt } = req.query;
@@ -189,8 +209,9 @@ export default {
     readRestaurant,
     readAll,
     updateRestaurant,
-    deleteRestaurant,
-    softDeleteRestaurant,
+    softDelete,
+    restore,
+    hardDelete,
     getRestaurantWithCustomers,
     getRestaurantFull,
     getNearby,

@@ -143,6 +143,11 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: "null = active; ISO date = soft-deleted at that timestamp"
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -196,6 +201,8 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Restaurant created
+ *       409:
+ *         description: A restaurant with this name already exists in this city
  *       422:
  *         description: Validation error
  *       500:
@@ -615,11 +622,19 @@ router.get('/:restaurantId/full', controller.getRestaurantFull);
  */
 router.put('/:restaurantId', ValidateJoi(Schemas.restaurant.update), controller.updateRestaurant);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Lifecycle  (soft-delete / restore / hard-delete)
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * @openapi
- * /restaurants/{restaurantId}:
+ * /restaurants/{restaurantId}/soft:
  *   delete:
- *     summary: Deletes a restaurant by ID
+ *     summary: Soft-deletes a restaurant
+ *     description: >
+ *       Sets `deletedAt` to the current timestamp. The restaurant is hidden from
+ *       all normal queries but remains in the database and can be restored.
+ *       Returns 404 if the restaurant is not found or is already deactivated.
  *     tags: [Restaurants]
  *     parameters:
  *       - in: path
@@ -630,11 +645,99 @@ router.put('/:restaurantId', ValidateJoi(Schemas.restaurant.update), controller.
  *         description: The restaurant's ObjectId
  *     responses:
  *       200:
- *         description: Successfully deleted
+ *         description: Restaurant deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Restaurant deactivated."
+ *                 restaurant:
+ *                   $ref: '#/components/schemas/Restaurant'
+ *       404:
+ *         description: Restaurant not found or already deactivated
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/:restaurantId/soft', controller.softDelete);
+
+/**
+ * @openapi
+ * /restaurants/{restaurantId}/restore:
+ *   patch:
+ *     summary: Restores a soft-deleted restaurant
+ *     description: >
+ *       Clears `deletedAt`, making the restaurant visible again in normal queries.
+ *       Returns 404 if the restaurant is not found or is already active.
+ *     tags: [Restaurants]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The restaurant's ObjectId
+ *     responses:
+ *       200:
+ *         description: Restaurant restored
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Restaurant restored."
+ *                 restaurant:
+ *                   $ref: '#/components/schemas/Restaurant'
+ *       404:
+ *         description: Restaurant not found or already active
+ *       500:
+ *         description: Internal server error
+ */
+router.patch('/:restaurantId/restore', controller.restore);
+
+/**
+ * @openapi
+ * /restaurants/{restaurantId}/hard:
+ *   delete:
+ *     summary: Permanently deletes a restaurant
+ *     description: >
+ *       Irreversibly removes the document from the database.
+ *       Use only for admin operations or GDPR erasure requests.
+ *     tags: [Restaurants]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The restaurant's ObjectId
+ *     responses:
+ *       200:
+ *         description: Restaurant permanently deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Restaurant permanently deleted."
+ *                 restaurant:
+ *                   $ref: '#/components/schemas/Restaurant'
  *       404:
  *         description: Restaurant not found
+ *       500:
+ *         description: Internal server error
  */
-router.delete('/:restaurantId', controller.deleteRestaurant);
+router.delete('/:restaurantId/hard', controller.hardDelete);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Read variants
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * @openapi
