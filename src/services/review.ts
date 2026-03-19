@@ -1,13 +1,22 @@
 import mongoose from 'mongoose';
 import { ReviewModel, IReview } from '../models/review';
 
-// Crear review
+// ========================
+// CREATE
+// ========================
 const createReview = async (data: Partial<IReview>): Promise<IReview> => {
-    const review = new ReviewModel(data);
+    const review = new ReviewModel({
+        ...data,
+        customer_id: new mongoose.Types.ObjectId(data.customer_id),
+        restaurant_id: new mongoose.Types.ObjectId(data.restaurant_id)
+    });
+
     return await review.save();
 };
 
-// Obtener una review
+// ========================
+// GET ONE
+// ========================
 const getReview = async (reviewId: string): Promise<IReview | null> => {
     if (!mongoose.Types.ObjectId.isValid(reviewId)) return null;
 
@@ -17,7 +26,9 @@ const getReview = async (reviewId: string): Promise<IReview | null> => {
         .lean();
 };
 
-// Obtener todas las reviews
+// ========================
+// GET ALL
+// ========================
 const getAllReviews = async (): Promise<IReview[]> => {
     return await ReviewModel.find({ deleted: false })
         .populate('customer_id', 'name')
@@ -25,7 +36,9 @@ const getAllReviews = async (): Promise<IReview[]> => {
         .lean();
 };
 
-// Actualizar review
+// ========================
+// UPDATE
+// ========================
 const updateReview = async (
     reviewId: string,
     data: Partial<IReview>
@@ -33,7 +46,6 @@ const updateReview = async (
 
     if (!mongoose.Types.ObjectId.isValid(reviewId)) return null;
 
-    // Evitar que cambien IDs
     delete data._id;
     delete data.customer_id;
     delete data.restaurant_id;
@@ -45,7 +57,9 @@ const updateReview = async (
     ).lean();
 };
 
-// Eliminar review (soft delete)
+// ========================
+// DELETE (SOFT)
+// ========================
 const deleteReview = async (reviewId: string): Promise<IReview | null> => {
     if (!mongoose.Types.ObjectId.isValid(reviewId)) return null;
 
@@ -56,14 +70,21 @@ const deleteReview = async (reviewId: string): Promise<IReview | null> => {
     ).lean();
 };
 
-// Obtener reviews por restaurante
+// ========================
+// BY RESTAURANT
+// ========================
 const getReviewsByRestaurant = async (restaurantId: string): Promise<IReview[]> => {
-    return await ReviewModel.find({ restaurant_id: restaurantId, deleted: false })
+    return await ReviewModel.find({
+        restaurant_id: new mongoose.Types.ObjectId(restaurantId), // 🔥 FIX
+        deleted: false
+    })
         .populate('customer_id', 'name profilePictures')
         .lean();
 };
 
-// Obtener reviews por cliente
+// ========================
+// BY CUSTOMER 🔥 FIXED
+// ========================
 const getReviewsByCustomer = async (
     customerId: string,
     limit = 5,
@@ -71,12 +92,13 @@ const getReviewsByCustomer = async (
     minRating?: number,
     sortByLikes?: boolean
 ) => {
+
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
         return { data: [], total: 0 };
     }
 
     const filter: any = {
-        customer_id: customerId,
+        customer_id: new mongoose.Types.ObjectId(customerId), // 🔥 FIX CLAVE
         deleted: false
     };
 
@@ -112,7 +134,9 @@ const getReviewsByCustomer = async (
     };
 };
 
-// Dar like
+// ========================
+// LIKE
+// ========================
 const likeReview = async (reviewId: string): Promise<IReview | null> => {
     if (!mongoose.Types.ObjectId.isValid(reviewId)) return null;
 
