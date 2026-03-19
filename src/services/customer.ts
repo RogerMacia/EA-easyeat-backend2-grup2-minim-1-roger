@@ -31,10 +31,13 @@ const createCustomer = async (data: Partial<ICustomer>) => {
 /**
  * Returns the customer only if it is NOT soft-deleted.
  * Pass `includeDeleted: true` to bypass the filter (admin use-cases).
+ *
+ * Uses the `.active()` query helper for consistency with the rest of the
+ * codebase instead of a raw `.where({ deletedAt: null })` call.
  */
 const getCustomer = async (customerId: string, includeDeleted = false) => {
     const query = CustomerModel.findById(customerId);
-    return includeDeleted ? query : query.where({ deletedAt: null });
+    return includeDeleted ? query : query.active();
 };
 
 // ─── Read (paginated list — active only) ──────────────────────────────────────
@@ -46,8 +49,8 @@ const getCustomer = async (customerId: string, includeDeleted = false) => {
 const getAllCustomers = async (
     { page = 1, limit = 20 }: PaginationOptions = {}
 ): Promise<PaginatedResult<ICustomer>> => {
-    const skip  = (page - 1) * limit;
-    const filter = { deletedAt: null };          // ← hard filter; soft-deleted docs never appear
+    const skip   = (page - 1) * limit;
+    const filter = { deletedAt: null };
 
     const [data, total] = await Promise.all([
         CustomerModel.find(filter).skip(skip).limit(limit).lean(),
@@ -66,7 +69,7 @@ const getAllCustomers = async (
 
 const updateCustomer = async (customerId: string, data: Partial<ICustomer>) => {
     // Only update documents that are still active
-    const customer = await CustomerModel.findOne({ _id: customerId, deletedAt: null });
+    const customer = await CustomerModel.findOne({ _id: customerId }).active();
     if (!customer) return null;
 
     customer.set(data);
