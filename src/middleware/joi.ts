@@ -226,12 +226,17 @@ review: {
             pointsEarned:  Joi.number().min(0).default(0),
             billAmount:    Joi.number().min(0).default(0)
         }),
-        update: Joi.object<IVisit>({
-            date:         Joi.date(),
-            pointsEarned: Joi.number().min(0),
-            billAmount:   Joi.number().min(0)
+        // Fem una intersecció (&) per afegir deletedAt encara que no estigui a la interfície original
+        update: Joi.object<IVisit & { deletedAt?: any }>({
+            date:          Joi.date(),
+            pointsEarned:  Joi.number().min(0),
+            billAmount:    Joi.number().min(0),
+            deletedAt:     Joi.date().allow(null).optional() // <--- Clau per al Soft Delete
         })
     },
+
+
+   
 
     restaurant: {
         // ✅ Only name, description, category, location.city are required.

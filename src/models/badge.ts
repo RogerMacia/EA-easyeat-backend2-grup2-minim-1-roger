@@ -6,6 +6,7 @@ export interface IBadge {
     title: string;
     description: string;
     type: string;
+    deletedAt?: Date | null;
 }
 
 // Schema

@@ -33,7 +33,15 @@ const createCustomer = async (data: Partial<ICustomer>) => {
  * Pass `includeDeleted: true` to bypass the filter (admin use-cases).
  */
 const getCustomer = async (customerId: string, includeDeleted = false) => {
-    const query = CustomerModel.findById(customerId);
+    // 1. Buscamos el cliente por ID
+    const query = CustomerModel.findById(customerId)
+        .populate({
+            path: 'visitHistory', // Primero poblamos el array de visitas del cliente
+            populate: {
+                path: 'restaurant_id' // Dentro de cada visita, poblamos el objeto del restaurante
+            }
+        });
+
     return includeDeleted ? query : query.where({ deletedAt: null });
 };
 
