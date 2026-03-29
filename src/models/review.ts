@@ -9,6 +9,7 @@ export interface IReview {
 
   date: Date;
   globalRating: number;
+  images: string[];
 
   ratings?: {
     foodQuality?: number;
@@ -34,6 +35,7 @@ const reviewSchema = new Schema<IReview>(
     restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
     date: { type: Date, required: true, default: Date.now },
     globalRating: { type: Number, required: true, min: 0, max: 10 },
+    images: [{ type: String }],
     ratings: {
       foodQuality: { type: Number, min: 0, max: 10 },
       staffService: { type: Number, min: 0, max: 10 },
