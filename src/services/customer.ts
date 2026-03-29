@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 import { CustomerModel, ICustomer } from '../models/customer';
 import { softDeleteDocument, restoreDocument } from '../utils/softDelete';
+import { PointsWalletModel, IPointsWallet } from '../models/pointsWallet';
+import { VisitModel, IVisit } from '../models/visit';
+import { RestaurantModel } from '../models/restaurant';
+import { BadgeModel, IBadge } from '../models/badge';
+import { ReviewModel, IReview } from '../models/review';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,19 +59,152 @@ const getCustomerFull = async (customerId: string, includeDeleted = false) => {
     return includeDeleted ? query : query.active();
 };
 
-const getCustomerAllPointsWallet = async (customerId: string ) => {
+// ─── Get all points wallets for a customer ────────────────────────────────────
+
+const getCustomerAllPointsWallet = async (customerId: string): Promise<IPointsWallet[]> => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return [];
+    }
+
+    try {
+        // Check if customer exists and is active
+        const customer = await CustomerModel.findById(customerId).active();
+        if (!customer) {
+            return [];
+        }
+
+        // Fetch all points wallets for this customer
+        return await PointsWalletModel.find({ customer_id: customerId })
+            .populate('restaurant_id', 'profile.name profile.location')
+            .lean();
+    } 
+    catch (error) {
+        console.error(`Error fetching points wallets for customer ${customerId}:`, error);
+        return [];
+    }
 };
 
-const getCustomerAllVisits = async (customerId: string ) => {
+// ─── Get all visits for a customer ────────────────────────────────────────────
+
+const getCustomerAllVisits = async (customerId: string): Promise<IVisit[]> => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return [];
+    }
+
+    try {
+        // Check if customer exists and is active
+        const customer = await CustomerModel.findById(customerId).active();
+        if (!customer) {
+            return [];
+        }
+
+        // Fetch all visits for this customer, excluding soft-deleted ones
+        return await VisitModel.find({
+            customer_id: customerId,
+            deletedAt: null,
+        })
+            .populate('restaurant_id', 'profile.name profile.rating profile.location.city')
+            .sort({ createdAt: -1 })  // Most recent first
+            .lean();
+    } catch (error) {
+        console.error(`Error fetching visits for customer ${customerId}:`, error);
+        return [];
+    }
 };
 
-const getCustomerAllFavouriteRestaurants = async (customerId: string ) => {
+// ─── Get all favourite restaurants for a customer ────────────────────────────
+
+const getCustomerAllFavouriteRestaurants = async (customerId: string) => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return [];
+    }
+
+    try {
+        // Check if customer exists and is active
+        const customer = await CustomerModel.findById(customerId)
+            .active()
+            .populate({
+            path: 'favoriteRestaurants',
+            select: 'profile.name profile.description profile.globalRating profile.category profile.image profile.location.city',
+            transform: (doc) => {
+                if (doc && doc.profile && doc.profile.image && Array.isArray(doc.profile.image)) {
+                    doc.profile.image = doc.profile.image.slice(0, 3);
+                }
+                return doc;
+            }
+        });
+
+        if (!customer || !customer.favoriteRestaurants) {
+            return [];
+        }
+
+        return customer.favoriteRestaurants;
+    }
+     catch (error) {
+        console.error(`Error fetching favourite restaurants for customer ${customerId}:`, error);
+        return [];
+    }
 };
 
-const getCustomerAllBadges = async (customerId: string) => {
+// ─── Get all badges earned by a customer ──────────────────────────────────────
+
+const getCustomerAllBadges = async (customerId: string): Promise<IBadge[]> => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return [];
+    }
+
+    try {
+        // Fetch customer with populated badges
+        const customer = await CustomerModel.findById(customerId)
+            .active()
+            .populate<{ badges: IBadge[] }>({
+                path: 'badges',
+                select: 'title description type',
+            })
+            .lean();
+
+        if (!customer || !customer.badges) {
+            return [];
+        }
+
+        return customer.badges;
+    } catch (error) {
+        console.error(`Error fetching badges for customer ${customerId}:`, error);
+        return [];
+    }
 };
 
-const getCustomerAllReviews = async (customerId: string ) => {
+// ─── Get all reviews written by a customer ────────────────────────────────────
+
+const getCustomerAllReviews = async (customerId: string): Promise<IReview[]> => {
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return [];
+    }
+
+    try {
+        // Check if customer exists and is active
+        const customer = await CustomerModel.findById(customerId).active();
+        if (!customer) {
+            return [];
+        }
+
+        // Fetch all reviews by this customer, excluding soft-deleted ones
+        return await ReviewModel.find({
+            customer_id: customerId,
+            deleted: false,
+        })
+            .populate('restaurant_id', 'profile.name profile.rating')
+            .sort({ createdAt: -1 })  // Most recent first
+            .lean();
+    } catch (error) {
+        console.error(`Error fetching reviews for customer ${customerId}:`, error);
+        return [];
+    }
 };
 
 // ─── Read (paginated list — active only) ──────────────────────────────────────
@@ -110,6 +248,11 @@ export default {
     getCustomer,
     getCustomerFull,
     getAllCustomers,
+    getCustomerAllBadges,
+    getCustomerAllFavouriteRestaurants,
+    getCustomerAllPointsWallet,
+    getCustomerAllReviews,
+    getCustomerAllVisits,
     updateCustomer,
     softDeleteCustomer,
     restoreCustomer,
