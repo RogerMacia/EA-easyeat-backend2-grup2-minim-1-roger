@@ -33,7 +33,7 @@ const createCustomer = async (data: Partial<ICustomer>) => {
 // ─── Read (single) ────────────────────────────────────────────────────────────
 
 const getCustomer = async (customerId: string, includeDeleted = false) => {
-    const query = CustomerModel.findById(customerId).populate({ path: 'visitHistory', populate: { path: 'restaurant_id' } });
+    const query = CustomerModel.findById(customerId);
     return includeDeleted ? query : query.active();
 };
 
