@@ -1,0 +1,185 @@
+import express from 'express';
+import controller from '../controllers/employee';
+import { Schemas, ValidateJoi } from '../middleware/joi';
+
+const router = express.Router();
+
+/**
+ * @openapi
+ * tags:
+ *   - name: Employees
+ *     description: CRUD endpoints for employees
+ *
+ * components:
+ *   schemas:
+ *     Employee:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: MongoDB ObjectId
+ *           example: "65f1c2a1b2c3d4e5f6789010"
+ *         restaurant_id:
+ *           type: string
+ *           description: Reference to the Restaurant
+ *           example: "65f1c2a1b2c3d4e5f6789000"
+ *         profile:
+ *           type: object
+ *           properties:
+ *             name:
+ *               type: string
+ *               example: "Jane Doe"
+ *             email:
+ *               type: string
+ *               example: "jane.doe@example.com"
+ *             phone:
+ *               type: string
+ *               example: "+34612345678"
+ *             role:
+ *               type: string
+ *               enum: [owner, staff]
+ *               example: "staff"
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ *
+ *     EmployeeCreateUpdate:
+ *       type: object
+ *       required:
+ *         - restaurant_id
+ *         - profile
+ *       properties:
+ *         restaurant_id:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789000"
+ *         profile:
+ *           type: object
+ *           required:
+ *             - name
+ *           properties:
+ *             name:
+ *               type: string
+ *               example: "Jane Doe"
+ *             password:
+ *               type: string
+ *               format: password
+ *               example: "s3cur3P@ss"
+ *             email:
+ *               type: string
+ *               example: "jane.doe@example.com"
+ *             phone:
+ *               type: string
+ *               example: "+34612345678"
+ *             role:
+ *               type: string
+ *               enum: [owner, staff]
+ *               example: "staff"
+ *         isActive:
+ *           type: boolean
+ *           example: true
+ */
+
+/**
+ * @openapi
+ * /employees:
+ *   post:
+ *     summary: Creates an employee
+ *     tags: [Employees]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/EmployeeCreateUpdate'
+ *     responses:
+ *       201:
+ *         description: Created
+ *       422:
+ *         description: Validation failed (Joi)
+ */
+router.post('/', ValidateJoi(Schemas.employee.create), controller.createEmployee);
+
+/**
+ * @openapi
+ * /employees/{employeeId}:
+ *   get:
+ *     summary: Gets an employee by ID
+ *     tags: [Employees]
+ *     parameters:
+ *       - in: path
+ *         name: employeeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee's ObjectId
+ *     responses:
+ *       200:
+ *         description: OK
+ *       404:
+ *         description: Not found
+ */
+router.get('/:employeeId', controller.readEmployee);
+
+/**
+ * @openapi
+ * /employees:
+ *   get:
+ *     summary: Lists all employees
+ *     tags: [Employees]
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get('/', controller.readAll);
+
+/**
+ * @openapi
+ * /employees/{employeeId}:
+ *   put:
+ *     summary: Updates an employee by ID
+ *     tags: [Employees]
+ *     parameters:
+ *       - in: path
+ *         name: employeeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee's ObjectId
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/EmployeeCreateUpdate'
+ *     responses:
+ *       201:
+ *         description: Updated
+ *       404:
+ *         description: Not found
+ *       422:
+ *         description: Validation failed (Joi)
+ */
+router.put('/:employeeId', ValidateJoi(Schemas.employee.update), controller.updateEmployee);
+
+/**
+ * @openapi
+ * /employees/{employeeId}:
+ *   delete:
+ *     summary: Deletes an employee by ID
+ *     tags: [Employees]
+ *     parameters:
+ *       - in: path
+ *         name: employeeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee's ObjectId
+ *     responses:
+ *       200:
+ *         description: OK
+ *       404:
+ *         description: Not found
+ */
+router.delete('/:employeeId', controller.deleteEmployee);
+
+export default router;

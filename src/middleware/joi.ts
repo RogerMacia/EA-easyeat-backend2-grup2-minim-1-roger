@@ -10,8 +10,10 @@ import { IReward } from '../models/reward';
 import { IRewardRedemption } from '../models/rewardRedemption';
 import { IStatistics } from '../models/statistics';
 import { IVisit } from '../models/visit';
+import { IDish } from '../models/dish';
 
 import Logging from '../library/logging';
+import dish from '../controllers/dish';
 
 export const ValidateJoi = (schema: ObjectSchema) => {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -306,4 +308,40 @@ export const Schemas = {
             badges:     Joi.array().items(objectId),
         }),
     },
-};
+
+    dish: {
+        create: Joi.object<IDish>({
+            restaurant_id: objectId.required(),
+            name:          Joi.string().required(),
+            description:   Joi.string().required(),
+            section:       Joi.string().valid('Starters', 'Mains', 'Desserts', 'Drinks', 'Sides', 'Specials').required(),
+            price:         Joi.number().min(0).required(),
+            images:         Joi.array().items(Joi.string().uri()),
+            active:        Joi.boolean().default(true),
+            availableAt:   Joi.array().items(Joi.string().valid('breakfast', 'brunch', 'lunch', 'happy-hour', 'dinner', 'all-day')).required(),
+            ingredients:   Joi.array().items(Joi.string()),
+            allergens:     Joi.array().items(Joi.string().valid('gluten', 'shellfish', 'nuts', 'dairy', 'eggs', 'soy', 'fish', 'sesame', 'mustard', 'celery', 'lupins', 'molluscs', 'sulphites')),
+            dietaryFlags:  Joi.array().items(Joi.string().valid('vegan', 'vegetarian', 'gluten-free', 'halal', 'kosher', 'dairy-free', 'nut-free')),
+            flavorProfile: Joi.array().items(Joi.string().valid('spicy', 'mild', 'sweet', 'sour', 'salty', 'bitter', 'umami', 'smoky', 'rich', 'light', 'creamy', 'tangy', 'fresh', 'hearty', 'nutty')),
+            cuisineTags:   Joi.array().items(Joi.string().valid(...categoryEnum)),
+            portionSize:   Joi.string().valid('small', 'medium', 'large', 'sharing')
+        }),
+        update: Joi.object<IDish>({
+            name:          Joi.string(),
+            description:   Joi.string(),
+            section:       Joi.string().valid('Starters', 'Mains', 'Desserts', 'Drinks', 'Sides', 'Specials'),
+            price:         Joi.number().min(0),
+            images:         Joi.array().items(Joi.string().uri()),
+            active:        Joi.boolean(),
+            availableAt:   Joi.array().items(Joi.string().valid('breakfast', 'brunch', 'lunch', 'happy-hour', 'dinner', 'all-day')).required(),
+            ingredients:   Joi.array().items(Joi.string()),
+            allergens:     Joi.array().items(Joi.string().valid('gluten', 'shellfish', 'nuts', 'dairy', 'eggs', 'soy', 'fish', 'sesame', 'mustard', 'celery', 'lupins', 'molluscs', 'sulphites')),
+            dietaryFlags:  Joi.array().items(Joi.string().valid('vegan', 'vegetarian', 'gluten-free', 'halal', 'kosher', 'dairy-free', 'nut-free')),
+            flavorProfile: Joi.array().items(Joi.string().valid('spicy', 'mild', 'sweet', 'sour', 'salty', 'bitter', 'umami', 'smoky', 'rich', 'light', 'creamy', 'tangy', 'fresh', 'hearty', 'nutty')),
+            cuisineTags:   Joi.array().items(Joi.string().valid(...categoryEnum)),
+            portionSize:   Joi.string().valid('small', 'medium', 'large', 'sharing')
+        })
+    },
+
+    
+}

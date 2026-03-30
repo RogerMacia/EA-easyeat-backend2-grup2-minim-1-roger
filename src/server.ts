@@ -11,7 +11,12 @@ import reviewRoutes from './routes/review';
 import customerRoutes from './routes/customer';
 import rewardRoutes from './routes/reward';
 import visitRoutes from './routes/visit';
-
+import badgeRoutes from './routes/badge';
+import dishRoutes from './routes/dish';
+import employeeRoutes from './routes/employee';
+import pointsWallets from './routes/pointsWallet';
+import rewardRedemption from './routes/rewardRedemption';
+import statistics from './routes/statistics';
 
 
 import swaggerUi from 'swagger-ui-express';
@@ -59,8 +64,16 @@ const StartServer = () => {
     router.use('/restaurants', restaurantRoutes);
     router.use('/reviews', reviewRoutes);
     router.use('/customers', customerRoutes);
-    router.use('/rewards', rewardRoutes)
-    router.use('/visits', visitRoutes)
+    router.use('/rewards', rewardRoutes);
+    router.use('/visits', visitRoutes);
+    router.use('/badges', badgeRoutes);
+    router.use('/dishes', dishRoutes);
+    router.use('/employees', employeeRoutes);
+    router.use('/pointsWallets', pointsWallets);
+    router.use('/rewardRedemptions', rewardRedemption);
+    router.use('/statistics', statistics);
+
+
 
     /** Healthcheck */
     router.get('/ping', (req, res, next) => res.status(200).json({ hello: 'world' }));

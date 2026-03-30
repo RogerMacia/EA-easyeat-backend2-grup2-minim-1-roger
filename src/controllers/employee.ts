@@ -1,0 +1,52 @@
+import { NextFunction, Request, Response } from 'express';
+import EmployeeService from '../services/employee';
+
+const createEmployee = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const savedEmployee = await EmployeeService.createEmployee(req.body);
+        return res.status(201).json(savedEmployee);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const readEmployee = async (req: Request, res: Response, next: NextFunction) => {
+    const { employeeId } = req.params;
+    try {
+        const employee = await EmployeeService.getEmployee(employeeId);
+        return employee ? res.status(200).json(employee) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const readAll = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const employees = await EmployeeService.getAllEmployees();
+        return res.status(200).json(employees);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const updateEmployee = async (req: Request, res: Response, next: NextFunction) => {
+    const { employeeId } = req.params;
+    try {
+        const updatedEmployee = await EmployeeService.updateEmployee(employeeId, req.body);
+        return updatedEmployee ? res.status(201).json(updatedEmployee) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const deleteEmployee = async (req: Request, res: Response, next: NextFunction) => {
+    const { employeeId } = req.params;
+    try {
+        const employee = await EmployeeService.deleteEmployee(employeeId);
+        return employee ? res.status(200).json(employee) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { createEmployee, readEmployee, readAll, updateEmployee, deleteEmployee };

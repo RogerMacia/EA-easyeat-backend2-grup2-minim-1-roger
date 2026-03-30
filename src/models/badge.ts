@@ -10,11 +10,11 @@ export interface IBadge {
 }
 
 // Schema
-const badgeRestaurantSchema = new Schema<IBadge>({
+const badgeSchema = new Schema<IBadge>({
     title: { type: String, required: true },
     description: { type: String, required: true },
     type: { type: String, required: true }
 }, { timestamps: true });
 
 // Model
-export const BadgeModel = model<IBadge>('Badge', badgeRestaurantSchema);
+export const BadgeModel = model<IBadge>('Badge', badgeSchema);
