@@ -11,6 +11,8 @@ import reviewRoutes from './routes/review';
 import customerRoutes from './routes/customer';
 import rewardRoutes from './routes/reward';
 import visitRoutes from './routes/visit';
+import authRoutes from './routes/auth';
+import { requireAdmin } from './middleware/auth';
 
 
 
@@ -54,6 +56,12 @@ const StartServer = () => {
 
     /** Swagger */
     router.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+    /** Public Routes */
+    router.use('/auth', authRoutes);
+
+    /** Protected backoffice Routes */
+    router.use(requireAdmin);
 
     /** Routes */
     router.use('/restaurants', restaurantRoutes);
