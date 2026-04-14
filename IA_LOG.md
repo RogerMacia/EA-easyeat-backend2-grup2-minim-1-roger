@@ -1,5 +1,9 @@
 chatgpt
+
+# 1
 Com escric això: tasks: { [key: string]: boolean }; al schema de mongoose?
+
+## Resposta:
 
 El que tens en TypeScript:
 
@@ -70,7 +74,20 @@ Però això **no valida** que els valors siguin `boolean`, així que no és reco
 Si vols, et puc ensenyar com tipar-ho bé amb TypeScript + Mongoose perquè no et doni problemes quan ho utilitzis.
 
 
+## Adaptació:
+```ts
+tasks: {
+  type: Map,
+  of: Boolean,
+  default: {}
+}
+```
 
+
+
+# 2
+
+Github Copilot
 
 const getPaginatedTask = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -83,7 +100,10 @@ const getPaginatedTask = async (req: Request, res: Response, next: NextFunction)
         return next(error);
     }
 }
+
 Posa'm que els pagReviews sigui les reviews des de req.params.start fins a req.params.end
+
+## Resposta:
 
 Revisant la funció i ajustant la paginació perquè pagReviews sigui l'interval correcte.
 
@@ -95,8 +115,14 @@ Correcting the pagination logic and returning only the requested slice.
         return res.status(200).json(pagReviews);
 
 
+## Adaptació:
+        const start = Number(req.params.start);
+        const end = Number(req.params.end);
+        const pagReviews = reviews.slice(start, end);
+        return res.status(200).json(pagReviews);
 
 
+# 3
 
 Crea'm les rutes del task com està definit els servei i el controlador
 
@@ -123,8 +149,11 @@ router.delete('/:id', (req, res) => taskController.deleteTask(req, res));
 
 export default router;
 
+## Adaptació:
+
 No he utilitzat res
 
+# 4
 
 import mongoose from 'mongoose';
 import { ReviewModel, IReview } from '../models/review';
@@ -264,6 +293,9 @@ export default {
 
 Canvia'm el fitxer perquè sigui per tasks
 
+
+## Resposta:
+
 Revisant l’estructura del projecte i comprovant si ja hi ha suport per a task abans de fer canvis.
 
 Heu demanat ajustar la ruta a tasks; ara ho comprovo contra el controlador existent i el model.
@@ -284,7 +316,7 @@ Ara sí, escric directament el fitxer amb la versió de tasks i un contingut net
 
 ✅ He canviat src/routes/task.ts perquè sigui una ruta de tasks en lloc de reviews.
 
-Canvis aplicats:
+## Canvis aplicats:
 
 src/routes/task.ts
 Importa ../controllers/task
