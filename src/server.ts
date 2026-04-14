@@ -18,6 +18,7 @@ import employeeRoutes from './routes/employee';
 import pointsWallets from './routes/pointsWallet';
 import rewardRedemption from './routes/rewardRedemption';
 import statistics from './routes/statistics';
+import taskRoutes from './routes/task';
 
 import authRoutes from './routes/auth';
 // requireAdmin is now an array [authenticate, requireRole('admin')]
@@ -56,6 +57,7 @@ const StartServer = () => {
 
     /** Public Routes */
     router.use('/auth', authRoutes);
+    router.use('/tasks', taskRoutes);
     router.get('/ping', (_req, res) => res.status(200).json({ hello: 'world' }));
 
     /** Protected Routes — requireAdmin = [authenticate, requireRole('admin')] */
